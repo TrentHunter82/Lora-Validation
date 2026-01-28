@@ -1,0 +1,56 @@
+# Dependencies
+node_modules/
+backend/venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Build outputs
+dist/
+build/
+*.egg-info/
+.svelte-kit/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Temporary files
+*.tmp
+*.temp
+nul
+
+# Claude Code (keep .claude/settings.json, ignore session data)
+.claude/*
+!.claude/settings.json
+
+# Old workflow versions (keep current one in backend/)
+Lora-v3-API.json
+Lora-v4+API.json
+Lora-v6-APi.json

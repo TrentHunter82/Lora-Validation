@@ -1,0 +1,138 @@
+@import "tailwindcss";
+
+@theme {
+	/* Metal color palette */
+	--color-metal-50: #fafafa;
+	--color-metal-100: #f4f4f5;
+	--color-metal-200: #e4e4e7;
+	--color-metal-300: #d4d4d8;
+	--color-metal-400: #a1a1aa;
+	--color-metal-500: #71717a;
+	--color-metal-600: #52525b;
+	--color-metal-700: #3f3f46;
+	--color-metal-800: #27272a;
+	--color-metal-850: #1f1f23;
+	--color-metal-900: #18181b;
+	--color-metal-950: #09090b;
+
+	/* LED indicator colors */
+	--color-led-green: #22c55e;
+	--color-led-orange: #f97316;
+	--color-led-red: #ef4444;
+}
+
+/* Brushed metal texture overlay */
+.brushed-metal {
+	background-image:
+		linear-gradient(135deg, rgba(255, 255, 255, 0.02) 25%, transparent 25%),
+		linear-gradient(225deg, rgba(255, 255, 255, 0.02) 25%, transparent 25%),
+		linear-gradient(45deg, rgba(255, 255, 255, 0.02) 25%, transparent 25%),
+		linear-gradient(315deg, rgba(255, 255, 255, 0.02) 25%, transparent 25%);
+	background-size: 4px 4px;
+}
+
+/* Noise texture */
+.noise-texture {
+	position: relative;
+}
+
+.noise-texture::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+	opacity: 0.03;
+	pointer-events: none;
+	border-radius: inherit;
+}
+
+/* LED glow animation */
+.led-glow {
+	animation: led-pulse 2s ease-in-out infinite;
+}
+
+@keyframes led-pulse {
+	0%,
+	100% {
+		box-shadow: 0 0 8px currentColor, 0 0 16px currentColor;
+	}
+	50% {
+		box-shadow: 0 0 12px currentColor, 0 0 24px currentColor;
+	}
+}
+
+/* Metal shimmer effect */
+.metal-shimmer {
+	position: relative;
+	overflow: hidden;
+}
+
+.metal-shimmer::after {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: -100%;
+	width: 100%;
+	height: 100%;
+	background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+	transition: left 0.5s ease;
+	pointer-events: none;
+}
+
+.metal-shimmer:hover::after {
+	left: 100%;
+}
+
+/* Recessed appearance */
+.recessed {
+	box-shadow:
+		inset 0 2px 4px rgba(0, 0, 0, 0.3),
+		inset 0 0 0 1px rgba(0, 0, 0, 0.2);
+}
+
+/* Raised metal button */
+.raised-metal {
+	box-shadow:
+		inset 0 1px 0 rgba(255, 255, 255, 0.1),
+		inset 0 -1px 0 rgba(0, 0, 0, 0.2),
+		0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Custom focus style */
+.focus-metal:focus {
+	outline: none;
+	box-shadow: 0 0 0 2px rgba(113, 113, 122, 0.5);
+}
+
+/* Custom scrollbar */
+* {
+	scrollbar-width: thin;
+	scrollbar-color: #3f3f46 #18181b;
+}
+
+*::-webkit-scrollbar {
+	width: 8px;
+	height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+	background: #18181b;
+	border-radius: 4px;
+}
+
+*::-webkit-scrollbar-thumb {
+	background: #3f3f46;
+	border-radius: 4px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+	background: #52525b;
+}
+
+/* Select dropdown styling */
+select {
+	max-width: 100%;
+	text-overflow: ellipsis;
+	overflow: hidden;
+	white-space: nowrap;
+}
