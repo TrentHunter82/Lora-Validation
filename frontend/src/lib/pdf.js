@@ -8,20 +8,15 @@ const MODEL_ORDER = [
 ];
 
 /**
- * Export a single-page PDF with reference image, title, and 2x2 grid of model outputs.
- *
- * @param {string} triggerWord
- * @param {Record<string, Array<{filename, subfolder?, type?}>>} results - output map from API
- * @param {(img: any) => string} imageUrlFn - function to resolve image objects to URLs
+ * Export single-page portrait PDF with all models stacked vertically.
  */
 export async function exportValidationPDF(triggerWord, results, imageUrlFn) {
-	const doc = new jsPDF({ orientation: 'landscape', format: 'a4' });
-	const pw = doc.internal.pageSize.getWidth(); // ~297mm
-	const ph = doc.internal.pageSize.getHeight(); // ~210mm
-	const margin = 10;
-	const headerHeight = 52;
+	const doc = new jsPDF({ orientation: 'portrait', format: 'a4' });
+	const pw = doc.internal.pageSize.getWidth(); // 210mm
+	const ph = doc.internal.pageSize.getHeight(); // 297mm
+	const margin = 8;
 
-	// --- Fetch all images in parallel for better performance ---
+	// --- Fetch all images in parallel ---
 	const refImg = results?.reference_image;
 	const modelImages = MODEL_ORDER.map(({ key }) => firstImage(results?.[key]));
 
@@ -30,53 +25,59 @@ export async function exportValidationPDF(triggerWord, results, imageUrlFn) {
 		...modelImages.map((img) => (img ? fetchImageDataUrl(imageUrlFn(img)) : Promise.resolve(null)))
 	]);
 
-	// --- Header: reference image + title ---
-	let headerTextX = margin;
+	// --- Header ---
+	doc.setFontSize(14);
+	doc.setFont(undefined, 'bold');
+	doc.text('LoRA Validation Report', margin, 12);
+	doc.setFont(undefined, 'normal');
+	doc.setFontSize(9);
+	doc.text(`Trigger: ${triggerWord}  |  ${new Date().toLocaleDateString()}`, margin, 20);
+
+	// Reference image in top-right
 	if (refDataUrl) {
 		const refDims = await getImageDimensions(refDataUrl);
-		const refFit = fitImage(refDims.width, refDims.height, 42, 42);
-		doc.addImage(refDataUrl, 'PNG', margin, 6, refFit.w, refFit.h);
-		headerTextX = margin + refFit.w + 6;
+		const refFit = fitImage(refDims.width, refDims.height, 25, 22);
+		doc.addImage(refDataUrl, 'PNG', pw - margin - refFit.w, 4, refFit.w, refFit.h);
 	}
 
-	doc.setFontSize(18);
-	doc.text('LoRA Validation Report', headerTextX, 18);
-	doc.setFontSize(10);
-	doc.text(`Trigger Word: ${triggerWord}`, headerTextX, 28);
-	doc.text(`Date: ${new Date().toLocaleString()}`, headerTextX, 38);
-
-	// --- 2x2 grid of model images ---
-	const gridTop = headerHeight;
-	const gridWidth = pw - margin * 2;
-	const gridHeight = ph - headerHeight - margin;
-	const cellWidth = gridWidth / 2;
-	const cellHeight = gridHeight / 2;
-	const labelHeight = 10;
-	const cellPadding = 3;
+	// --- 4 rows layout (stacked vertically) ---
+	const headerHeight = 28;
+	const availableHeight = ph - headerHeight - margin;
+	const availableWidth = pw - margin * 2;
+	const rowHeight = availableHeight / 4;
+	const labelWidth = 22;
+	const rowPadding = 2;
 
 	for (let i = 0; i < MODEL_ORDER.length; i++) {
 		const { label } = MODEL_ORDER[i];
 		const dataUrl = modelDataUrls[i];
-		if (!dataUrl) continue;
 
-		const col = i % 2;
-		const row = Math.floor(i / 2);
-		const cellX = margin + col * cellWidth;
-		const cellY = gridTop + row * cellHeight;
+		const rowY = headerHeight + i * rowHeight;
 
-		// Label
+		// Label on left
 		doc.setFontSize(9);
 		doc.setFont(undefined, 'bold');
-		doc.text(label, cellX + cellPadding, cellY + 7);
+		doc.text(label, margin, rowY + rowHeight / 2 + 3);
 		doc.setFont(undefined, 'normal');
 
-		// Image - maximize size within cell
+		if (!dataUrl) {
+			doc.setFontSize(8);
+			doc.setTextColor(150);
+			doc.text('No output', margin + labelWidth, rowY + rowHeight / 2 + 3);
+			doc.setTextColor(0);
+			continue;
+		}
+
+		// Image - fill the row
 		const dims = await getImageDimensions(dataUrl);
-		const maxImgWidth = cellWidth - cellPadding * 2;
-		const maxImgHeight = cellHeight - labelHeight - cellPadding;
+		const maxImgWidth = availableWidth - labelWidth - rowPadding;
+		const maxImgHeight = rowHeight - rowPadding * 2;
 		const { w, h } = fitImage(dims.width, dims.height, maxImgWidth, maxImgHeight);
-		const imgX = cellX + cellPadding + (maxImgWidth - w) / 2; // center horizontally
-		doc.addImage(dataUrl, 'PNG', imgX, cellY + labelHeight, w, h);
+
+		const imgX = margin + labelWidth + (maxImgWidth - w) / 2;
+		const imgY = rowY + (rowHeight - h) / 2;
+
+		doc.addImage(dataUrl, 'PNG', imgX, imgY, w, h);
 	}
 
 	const filename = `${triggerWord.replace(/[^a-zA-Z0-9]/g, '_')}_validation.pdf`;

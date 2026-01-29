@@ -16,6 +16,7 @@
 	let loading = $state(false);
 	let results = $state(null);
 	let error = $state(null);
+	let progress = $state(null); // Progress data from polling
 	let connected = $state(false);
 	let referenceImage = $state(null); // {name, previewUrl}
 	let uploadingImage = $state(false);
@@ -62,6 +63,7 @@
 
 	async function handleImageSelect(event) {
 		const file = event.target.files?.[0];
+		const input = event.target; // Capture reference before async
 		if (!file) return;
 
 		uploadingImage = true;
@@ -73,8 +75,11 @@
 				name: result.name,
 				previewUrl: URL.createObjectURL(file)
 			};
+			// Reset file input so same file can be re-uploaded
+			input.value = '';
 		} catch (e) {
-			error = 'Failed to upload reference image';
+			console.error('Upload error:', e);
+			error = 'Failed to upload reference image. Is ComfyUI running?';
 		} finally {
 			uploadingImage = false;
 		}
@@ -88,6 +93,9 @@
 	}
 
 	async function handleGenerate() {
+		// Prevent double-click while already loading
+		if (loading) return;
+
 		if (activeCount === 0) {
 			error = 'Enable at least one prompt to run validation.';
 			return;
@@ -101,6 +109,7 @@
 		loading = true;
 		results = null;
 		error = null;
+		progress = null; // Reset progress
 
 		const payload = prompts.map((p, i) => ({
 			text: p.text,
@@ -124,10 +133,15 @@
 					}
 					try {
 						const status = await pollStatus(prompt_id);
+						// Update progress data
+						if (status.progress) {
+							progress = status.progress;
+						}
 						if (status.done) {
 							clearPolling();
 							results = status.outputs;
 							loading = false;
+							progress = null;
 						} else {
 							// Exponential backoff: 2s → 4s → 8s → ... → 30s max
 							currentDelay = Math.min(currentDelay * 1.5, 30000);
@@ -137,6 +151,7 @@
 						clearPolling();
 						error = 'Error checking generation status';
 						loading = false;
+						progress = null;
 					}
 				}, currentDelay);
 			}
@@ -264,7 +279,7 @@
 
 	<!-- Loading -->
 	{#if loading}
-		<StatusIndicator status="running" modelCount={activeModels} />
+		<StatusIndicator status="running" modelCount={activeModels} {progress} />
 	{/if}
 
 	<!-- Results -->

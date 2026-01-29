@@ -126,6 +126,54 @@ def generate(req: GenerateRequest):
         raise HTTPException(status_code=502, detail="ComfyUI request failed")
 
 
+# Map model pipeline node IDs to model names for progress tracking
+MODEL_OUTPUT_NODES = {
+    "flux_grid": CONFIG["nodes"]["output_flux_grid"],
+    "zimage_grid": CONFIG["nodes"]["output_zimage_grid"],
+    "qwen_grid": CONFIG["nodes"]["output_qwen_grid"],
+    "wan_grid": CONFIG["nodes"]["output_wan_grid"],
+}
+
+# Map node IDs to model names for queue progress
+MODEL_NODE_MAPPING = {}
+for model_name, node_ids in CONFIG["nodes"].get("model_nodes", {}).items():
+    for node_id in node_ids:
+        MODEL_NODE_MAPPING[node_id] = model_name
+
+
+def _get_queue_progress(prompt_id: str) -> dict:
+    """Check ComfyUI queue to determine current execution progress."""
+    try:
+        r = requests.get(f"{CONFIG['comfyui_url']}/queue", timeout=5)
+        r.raise_for_status()
+        queue_data = r.json()
+    except requests.RequestException:
+        return {"completed": [], "current_model": None, "percent": 0}
+
+    # Check if prompt is in pending queue
+    pending = queue_data.get("queue_pending", [])
+    for item in pending:
+        if len(item) > 1 and item[1] == prompt_id:
+            return {"completed": [], "current_model": None, "percent": 0, "status": "queued"}
+
+    # Check if prompt is currently running
+    running = queue_data.get("queue_running", [])
+    for item in running:
+        if len(item) > 1 and item[1] == prompt_id:
+            # Try to get current node from execution info
+            current_model = None
+            if len(item) > 3 and isinstance(item[3], dict):
+                current_nodes = item[3].get("nodes", [])
+                for node_id in current_nodes:
+                    if node_id in MODEL_NODE_MAPPING:
+                        current_model = MODEL_NODE_MAPPING[node_id]
+                        break
+            return {"completed": [], "current_model": current_model, "percent": 10, "status": "generating"}
+
+    # Not in queue - might be finishing up
+    return {"completed": [], "current_model": None, "percent": 5, "status": "processing"}
+
+
 @app.get("/api/status/{prompt_id}")
 def get_status(prompt_id: str):
     try:
@@ -147,12 +195,29 @@ def get_status(prompt_id: str):
     history = r.json()
 
     if prompt_id not in history:
-        return {"done": False, "status": "running"}
+        # Job still running - check queue for progress info
+        progress = _get_queue_progress(prompt_id)
+        return {"done": False, "status": "running", "progress": progress}
 
     outputs = history[prompt_id].get("outputs", {})
     nodes = CONFIG["nodes"]
 
-    result = {"done": True, "status": "complete", "outputs": {}}
+    # Track which model grids are complete
+    completed_models = []
+    for model_name, node_id in MODEL_OUTPUT_NODES.items():
+        if node_id in outputs and "images" in outputs[node_id]:
+            completed_models.append(model_name)
+
+    result = {
+        "done": True,
+        "status": "complete",
+        "outputs": {},
+        "progress": {
+            "completed": completed_models,
+            "current_model": None,
+            "percent": 100,
+        },
+    }
 
     # Include reference image from the workflow's LoadImage node
     prompt_data = history[prompt_id].get("prompt", [None, None])

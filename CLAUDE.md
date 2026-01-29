@@ -6,7 +6,7 @@ LoRA Validation Tool — internal tool for Trent Films to validate trained LoRA 
 ## Tech Stack
 - **Frontend**: SvelteKit 5 (runes: `$props()`, `$state()`, `$derived()`, `$bindable()`) + Tailwind CSS v4 (`@theme` directive)
 - **Backend**: Python FastAPI + requests + python-multipart (for file uploads)
-- **PDF**: jsPDF (client-side, single-page landscape A4)
+- **PDF**: jsPDF (client-side, single-page portrait A4 with 4 horizontal rows)
 - **ComfyUI**: WSL2 on localhost:8188, workflow injected via REST API
 
 ## Key Conventions
@@ -20,9 +20,10 @@ LoRA Validation Tool — internal tool for Trent Films to validate trained LoRA 
 ## Important Files
 - `backend/config.py` — All workflow node IDs. If workflow_api.json is re-exported, ALL node IDs may change
 - `backend/workflow_api.json` — The ComfyUI workflow (node 143 = LoadImage for reference)
-- `backend/app.py` — FastAPI app with `/api/upload-image` endpoint for reference images
+- `backend/app.py` — FastAPI app with progress tracking in `/api/status/{id}` endpoint
 - `frontend/src/lib/api.js` — `imageUrl()` builds URLs, `uploadImage()` for reference upload
-- `frontend/src/lib/pdf.js` — Single-page PDF with 2x2 grid layout (reference image + 4 model grids)
+- `frontend/src/lib/pdf.js` — Portrait PDF with 4 horizontal rows (one per model)
+- `frontend/src/lib/components/StatusIndicator.svelte` — Progress bar with model status indicators
 
 ## Running
 1. ComfyUI (WSL): `cd ~/ComfyUI && python main.py --listen 0.0.0.0 --port 8188`

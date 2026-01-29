@@ -74,15 +74,22 @@ Environment variables:
 - `LORA_PATH` - Path to LoRA models in ComfyUI
 - `ALLOWED_ORIGINS` - CORS origins (default: `http://localhost:5173`)
 
+## Features
+
+- **Progress Tracking** - Real-time progress bar showing which model is currently generating
+- **Model Status** - Visual indicators (✓ complete, ⏳ active, ○ pending) for each architecture
+- **PDF Export** - Portrait A4 report with all 4 models stacked vertically
+- **Reference Image** - Upload and preview reference images (320px preview)
+
 ## Usage
 
-1. **Select LoRA** - Choose your trained LoRA model
+1. **Select LoRA** - Choose your trained LoRA model for each architecture
 2. **Set Trigger Word** - Enter the activation trigger word
 3. **Upload Reference** - Upload a reference image for comparison
-4. **Configure Prompts** - Enable/disable test prompts
-5. **Select Models** - Choose which architectures to test
-6. **Generate** - Run the validation workflow
-7. **Export PDF** - Download a single-page comparison report
+4. **Configure Prompts** - Enable/disable test prompts (up to 9)
+5. **Select Models** - Toggle which architectures to test
+6. **Generate** - Run validation with live progress tracking
+7. **Export PDF** - Download portrait report with all model comparisons
 
 ## Project Structure
 
@@ -111,13 +118,27 @@ Environment variables:
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/api/loras` | GET | List available LoRA models |
+| `/api/loras` | GET | List available LoRA models by architecture |
 | `/api/prompts` | GET | Get default test prompts |
-| `/api/upload-image` | POST | Upload reference image |
+| `/api/upload-image` | POST | Upload reference image to ComfyUI |
 | `/api/generate` | POST | Start validation workflow |
-| `/api/status/{id}` | GET | Check workflow status |
+| `/api/status/{id}` | GET | Check status with progress data |
 | `/api/image/{filename}` | GET | Proxy images from ComfyUI |
 | `/health` | GET | Health check |
+
+### Status Response
+
+```json
+{
+  "done": false,
+  "status": "running",
+  "progress": {
+    "completed": ["flux_grid", "zimage_grid"],
+    "current_model": "qwen",
+    "percent": 50
+  }
+}
+```
 
 ## Tech Stack
 
