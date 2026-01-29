@@ -184,17 +184,17 @@
 								<img
 									src={referenceImage.previewUrl}
 									alt="Reference"
-									class="w-12 h-12 rounded-lg object-cover border border-white/10"
+									class="w-80 h-80 rounded-lg object-cover border border-white/10"
 								/>
 								<button
 									onclick={clearReferenceImage}
-									class="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-metal-700 border border-white/10 text-metal-300 hover:text-white hover:bg-led-red/50 flex items-center justify-center text-xs"
+									class="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-metal-700 border border-white/10 text-metal-300 hover:text-white hover:bg-led-red/50 flex items-center justify-center text-sm font-bold"
 									title="Remove image"
 								>
 									×
 								</button>
 							</div>
-							<span class="text-sm text-metal-400 truncate max-w-[150px]">{referenceImage.name}</span>
+							<span class="text-sm text-metal-400 truncate max-w-[200px]">{referenceImage.name}</span>
 						{:else}
 							<label class="cursor-pointer">
 								<input
