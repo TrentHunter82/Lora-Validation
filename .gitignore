@@ -54,3 +54,8 @@ nul
 Lora-v3-API.json
 Lora-v4+API.json
 Lora-v6-APi.json
+
+# Internal documentation (not for public repo)
+CLAUDE.md
+HANDOFF.md
+LoRA_Validation_Website_PRD.md
